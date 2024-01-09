@@ -75,9 +75,13 @@ def relative_earth_sun_distance__D_r(day_of_year, number_of_days_in_year):
     Implementation follows equation 23, Allen and others (1998). 
     See also Equation 1.2.3 in Iqbal, Muhammad (1983-09-28).
     """
-    d_r = 1.0 + 0.033                                      \
-            * cos( 2.0 * pi * day_of_year )                \
-            / number_of_days_in_year      
+
+#   dDsubR = 1_c_double + 0.033_c_double &
+#             * cos( TWOPI * real( iDayOfYear, c_double )          &
+#                                      / real( iNumDaysInYear, c_double ) )
+
+
+    d_r = 1.0 + 0.033 * cos( 2.0 * pi * day_of_year / number_of_days_in_year )      
 
     return d_r
 

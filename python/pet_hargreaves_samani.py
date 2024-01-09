@@ -51,6 +51,7 @@ def calculate_et0_hargreaves_samani(day_of_year, number_of_days_in_year, latitud
 
     Ra = equivalent_evaporation(extraterrestrial_radiation__Ra(latitude_radians, delta, omega_s, d_r))
     ref_ET = et0_hargreaves_samani(Ra, air_temp_min, air_temp_max, air_temp_mean)
+
     #print(f'ref_ET: {ref_ET}')
     return ref_ET
 
