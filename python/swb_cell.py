@@ -3,6 +3,8 @@ import datetime as dt
 import pandas as pd
 from pet_hargreaves_samani import calculate_et0_hargreaves_samani
 from actual_et_thornthwaite_mather import calc_daily_soil_storage
+from partition_daily_precipitation import partition_daily_precip
+from potential_snowmelt import calculate_potential_snowmelt
 
 class SWBCell:
 
@@ -28,38 +30,13 @@ class SWBCell:
 
     def update_date_measures(self, year, month, day):
         self.date = dt.datetime(year, month, day)
-        self.day_of_year = (self.date - dt.datetime(year, 1, 1)).days 
-        self.number_of_days_in_year = (dt.datetime(year, 12, 31) - dt.datetime(year, 1, 1)).days
+        self.day_of_year = (self.date - dt.datetime(year, 1, 1)).days + 1.
+        self.number_of_days_in_year = (dt.datetime(year, 12, 31) - dt.datetime(year, 1, 1)).days + 1.
         self.dtindex = f'{self.date.year}{self.date.month:02d}{self.date.day:02d}'
 
 
     def update_daily_precip(self, precip_mm):
         self.gross_precip = precip_mm
-
-    def partition_daily_precip(self):
-
-        def c_to_f(t):
-            return t*1.8 + 32.
-
-        # snowfall criteria from Wes Dripps code:
-        # (dailytmp - (0.33 * (tmax - tmin))) <= 32 
-        #
-        snowfall_threshold = c_to_f(self.tmean_c) - (c_to_f(self.tmax_c) - c_to_f(self.tmin_c)) / 3.
-
-        if snowfall_threshold <= 32.:
-            self.snowfall = self.gross_precip
-            self.rainfall = 0.
-        else:
-            self.snowfall = 0.
-            self.rainfall = self.gross_precip
-
-    def update_snowmelt(self):
-        MELT_INDEX = 1.5   # mm potential melt per degree C
-
-        if self.tmean_c > 0.:
-            self.potential_snowmelt = MELT_INDEX * self.tmax_c
-        else:
-            self.potential_snowmelt = 0.
 
 
     def update_snow_storage(self):
@@ -104,12 +81,19 @@ class SWBCell:
         self.update_daily_precip(precip_mm)
         self.update_daily_air_temps(tmin_c, tmax_c, tmean_c)
         self.calc_daily_pet()
-        self.partition_daily_precip()
-        self.update_snowmelt()
+#        self.partition_daily_precip()
+        (self.rainfall, self.snowfall) = partition_daily_precip(self.gross_precip, self.tmin_c, self.tmax_c, self.tmean_c)
+        self.potential_snowmelt = calculate_potential_snowmelt(self.tmean_c, self.tmax_c)
         self.update_snow_storage()
         self.previous_soil_storage = self.soil_storage
-        (self.soil_storage, self.p_minus_pet, self.aet) = calc_daily_soil_storage(self.rainfall, self.snowmelt, 
-                                                                                  self.pet, self.previous_soil_storage, self.soil_storage_max)
+        (self.p_minus_pet, self.aet) = calc_daily_soil_storage(self.rainfall,
+                                                               self.snowmelt,
+                                                               self.pet,
+                                                               self.previous_soil_storage,
+                                                               self.soil_storage_max)
+        
+        self.soil_storage = self.soil_storage + self.rainfall + self.snowmelt - self.aet
+
         self.calc_net_infiltration()
 
     def variables_toscreen(self):

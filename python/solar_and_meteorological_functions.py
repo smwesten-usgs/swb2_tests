@@ -22,7 +22,8 @@ def sunrise_sunset_angle__omega_s(latitude, delta):
 
     Implementation follows equation 25, Allen and others (1998).
     """
-    omega_s = arccos( - tan(latitude) * tan(delta) )
+    omega_s = arccos( -1.0 * tan(latitude) * tan(delta) )
+
     return omega_s
 
 

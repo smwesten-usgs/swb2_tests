@@ -53,6 +53,7 @@ def calculate_et0_hargreaves_samani(day_of_year, number_of_days_in_year, latitud
     ref_ET = et0_hargreaves_samani(Ra, air_temp_min, air_temp_max, air_temp_mean)
 
     #print(f'ref_ET: {ref_ET}')
+    print(f"doy: {day_of_year}  number_of_days_in_year: {number_of_days_in_year}  d_r: {d_r}   delta: {delta}   omega_s: {omega_s}  Ra: {Ra}   ref_ET0: {ref_ET}  latitude_rad: {latitude_radians}")
     return ref_ET
 
 
