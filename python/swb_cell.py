@@ -1,14 +1,18 @@
 import numpy as np
 import datetime as dt
 import pandas as pd
+import sys
 from pet_hargreaves_samani import calculate_et0_hargreaves_samani
-from actual_et_thornthwaite_mather import calc_daily_soil_storage
+from actual_et_thornthwaite_mather import calc_actual_et
+from actual_et_thornthwaite_mather__tables import (calc_actual_et__tm_tables,
+                                                  calc_actual_et__tm_eqns)
 from partition_daily_precipitation import partition_daily_precip
 from potential_snowmelt import calculate_potential_snowmelt
 
 class SWBCell:
 
-    def __init__(self, latitude, available_water_capacity, rooting_depth):
+    def __init__(self, latitude, available_water_capacity, rooting_depth, calculation_method='tm_exp',
+                 thornthwaite_mather_df=None):
         self.latitude = latitude
         self.available_water_capacity = available_water_capacity
         self.gross_precip = 0.
@@ -17,8 +21,11 @@ class SWBCell:
         self.snowfall = 0.
         self.snow_storage = 0.
         self.pet = 0.
+        self.apwl = 0.
         self.rooting_depth = rooting_depth
         self.net_infiltration = 0.
+        self.calc_method = calculation_method
+        self.tm_df=thornthwaite_mather_df
         self.output_dict = {}
 
     def init_soil_storage_max(self):
@@ -74,6 +81,7 @@ class SWBCell:
     def init_swb_cell(self):
         self.init_soil_storage_max()
         self.init_soil_storage()
+        self.apwl = 0.0
 
 
     def calc_cell_water_budget(self, year, month, day, tmin_c, tmax_c, tmean_c, precip_mm):
@@ -86,12 +94,34 @@ class SWBCell:
         self.potential_snowmelt = calculate_potential_snowmelt(self.tmean_c, self.tmax_c)
         self.update_snow_storage()
         self.previous_soil_storage = self.soil_storage
-        (self.p_minus_pet, self.aet) = calc_daily_soil_storage(self.rainfall,
-                                                               self.snowmelt,
-                                                               self.pet,
-                                                               self.previous_soil_storage,
-                                                               self.soil_storage_max)
-        
+        self.previous_apwl = self.apwl
+
+        if self.calc_method=='tm_table':
+            (self.p_minus_pet, self.apwl, self.aet) = calc_actual_et__tm_tables(self.rainfall,
+                                                                                self.snowmelt,
+                                                                                self.pet,
+                                                                                self.previous_apwl,
+                                                                                self.previous_soil_storage,
+                                                                                self.tm_df)
+
+        elif self.calc_method=='tm_eqns':
+            (self.p_minus_pet, self.apwl, self.aet) = calc_actual_et__tm_eqns (self.rainfall,
+                                                                               self.snowmelt,
+                                                                               self.pet,
+                                                                               self.previous_apwl,
+                                                                               self.previous_soil_storage)
+
+        elif self.calc_method=='tm_exp':
+            (self.p_minus_pet, self.aet) = calc_actual_et(self.rainfall,
+                                                          self.snowmelt,
+                                                          self.pet,
+                                                          self.previous_soil_storage,
+                                                          self.soil_storage_max)
+
+        else:
+            print("You need to choose an actual ET calculation method ('tm_tables', or 'tm_exp').")
+            sys.exit(-1)
+
         self.soil_storage = self.soil_storage + self.rainfall + self.snowmelt - self.aet
 
         self.calc_net_infiltration()
@@ -104,13 +134,13 @@ class SWBCell:
     def variables_todict(self):
         self.output_dict[self.dtindex] = [self.date, self.previous_soil_storage, self.soil_storage,
                                           self.rainfall, self.snow_storage, self.snowfall, self.snowmelt,
-                                          self.pet, self.p_minus_pet, self.aet, self.net_infiltration]
+                                          self.pet, self.p_minus_pet, self.aet, self.net_infiltration, self.apwl]
         
     def convert_dict_to_df(self):
         self.output_df = pd.DataFrame.from_dict(self.output_dict, orient='index')
         self.output_df.columns=['date','previous_soil_storage','soil_storage','rainfall',
                                 'snow_storage', 'snowfall', 'snowmelt','pet','p_minus_pet',
-                                'aet','net_infiltration']
+                                'aet','net_infiltration','apwl']
 
 
 def references():

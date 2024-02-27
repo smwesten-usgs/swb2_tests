@@ -1,13 +1,14 @@
 import numpy as np
 
-def calc_daily_soil_storage(rainfall, snowmelt, pet, soil_storage, soil_storage_max):
+def calc_actual_et(rainfall, snowmelt, pet, soil_storage, soil_storage_max):
     """
     Return the current soil moisture (in inches) given the current soil moisture maximum,
     and the difference between (rainfall + snowmelt) minus the daily potential evapotranspiration.
 
     rainfall                Daily rainfall amount (mm or inches).
     snowmelt                Daily snowmelt amount (mm or inches).
-    previous_soil_storage   
+    pet                     Potential evapotranspiration (mm).
+    soil_storage   
     soil_storage_max        Maximum moisture content of a soil at field capacity.
     """
 
