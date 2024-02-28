@@ -9,11 +9,11 @@ def destroy_model_work_output_and_logfile_dirs(base_dir,
 
   base_path = pl.Path(base_dir)
   swb_work_path = base_path / swb_work_dir
-  logfile_path = base_path / logfile_dir
-  output_path = base_path / output_dir 
-  shutil.rmtree(swb_work_path, ignore_errors=True)
+  logfile_path = swb_work_path / logfile_dir
+  output_path = swb_work_path / output_dir 
   shutil.rmtree(output_path, ignore_errors=True)
   shutil.rmtree(logfile_path, ignore_errors=True)
+  shutil.rmtree(swb_work_path, ignore_errors=True)
 
 
 def create_model_work_output_and_logfile_dirs(base_dir,
@@ -23,8 +23,8 @@ def create_model_work_output_and_logfile_dirs(base_dir,
 
   base_path = pl.Path(base_dir)
   swb_work_path = base_path / swb_work_dir
-  logfile_path = base_path / logfile_dir
-  output_path = base_path / output_dir 
+  logfile_path = swb_work_path / logfile_dir
+  output_path = swb_work_path / output_dir 
   swb_work_path.mkdir(parents=True, exist_ok=True)
   logfile_path.mkdir(parents=True, exist_ok=True)
   output_path.mkdir(parents=True, exist_ok=True)
