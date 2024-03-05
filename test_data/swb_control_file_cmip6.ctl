@@ -18,29 +18,43 @@ DIRECT_NET_INFILTRATION_METHOD   NONE
 DIRECT_SOIL_MOISTURE_METHOD      NONE
 SOIL_STORAGE_MAX_METHOD          TABLE
 
-# ---------- Daymet NetCDF daily weather data files ------------------------
-PRECIPITATION NETCDF daymet_v4_daily_na_prcp_2000_mn__14-day.nc
-PRECIPITATION_GRID_PROJECTION_DEFINITION  +proj=lcc +lat_1=25.0 +lat_2=60.0 +lat_0=42.5 +lon_0=-100.0 +x_0=0.0 +y_0=0.0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs 
-PRECIPITATION_NETCDF_Z_VAR                prcp
-PRECIPITATION_UNITS_MILLIMETERS
-PRECIPITATION_MISSING_VALUES_CODE      -9999.0
-PRECIPITATION_MISSING_VALUES_OPERATOR      <=
-PRECIPITATION_MISSING_VALUES_ACTION       zero
+# ---------- CMIP6 NetCDF climate files -----------------------
+PRECIPITATION NETCDF historical_1995-2014_MIROC-ES2L__time_in_days__14-day.nc
+PRECIPITATION_GRID_PROJECTION_DEFINITION +proj=latlon +datum=WGS84 
+PRECIPITATION_NETCDF_Z_VAR             PREC_biasadju
+PRECIPITATION_NETCDF_X_VAR                       lon
+PRECIPITATION_NETCDF_Y_VAR                       lat
+PRECIPITATION_NETCDF_TIME_VAR                   time
+### SCALE FACTOR WHACKINESS: netCDF values are in mm per 3 hour period
+###                          must convert from mm to inches (divide by 25.4) and multiply by 8
+PRECIPITATION_SCALE_FACTOR                0.31496063     
+PRECIPITATION_MISSING_VALUES_CODE            -9.e+33
+PRECIPITATION_MISSING_VALUES_OPERATOR             <=
+PRECIPITATION_MISSING_VALUES_ACTION             zero
 
-TMAX NETCDF daymet_v4_daily_na_tmax_2000_mn__14-day.nc
-TMAX_GRID_PROJECTION_DEFINITION  +proj=lcc +lat_1=25.0 +lat_2=60.0 +lat_0=42.5 +lon_0=-100.0 +x_0=0.0 +y_0=0.0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs 
-TMAX_UNITS_CELSIUS
-TMAX_MISSING_VALUES_CODE      -9999.0
-TMAX_MISSING_VALUES_OPERATOR      <=
-TMAX_MISSING_VALUES_ACTION       mean
+TMAX NETCDF historical_1995-2014_MIROC-ES2L__time_in_days__14-day.nc
+TMAX_GRID_PROJECTION_DEFINITION +proj=latlon +datum=WGS84
+TMAX_NETCDF_Z_VAR            T2max_biasadju
+TMAX_NETCDF_X_VAR                       lon
+TMAX_NETCDF_Y_VAR                       lat
+TMAX_NETCDF_TIME_VAR                   time
+TMAX_UNITS_KELVIN
+TMAX_MISSING_VALUES_CODE             -9.e+33
+TMAX_MISSING_VALUES_OPERATOR             <=
+TMAX_MISSING_VALUES_ACTION             mean
 
-TMIN NETCDF daymet_v4_daily_na_tmin_2000_mn__14-day.nc
-TMIN_GRID_PROJECTION_DEFINITION  +proj=lcc +lat_1=25.0 +lat_2=60.0 +lat_0=42.5 +lon_0=-100.0 +x_0=0.0 +y_0=0.0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs 
-TMIN_UNITS_CELSIUS
-TMIN_MISSING_VALUES_CODE      -9999.0
-TMIN_MISSING_VALUES_OPERATOR      <=
-TMIN_MISSING_VALUES_ACTION       mean
-# --------------------------------------------------------------------------
+TMIN NETCDF historical_1995-2014_MIROC-ES2L__time_in_days__14-day.nc
+TMIN_GRID_PROJECTION_DEFINITION +proj=latlon +datum=WGS84
+TMIN_NETCDF_Z_VAR            T2min_biasadju
+TMIN_NETCDF_X_VAR                       lon
+TMIN_NETCDF_Y_VAR                       lat
+TMIN_NETCDF_TIME_VAR                   time
+TMIN_UNITS_KELVIN
+TMIN_MISSING_VALUES_CODE            -9.e+33
+TMIN_MISSING_VALUES_OPERATOR             <=
+TMIN_MISSING_VALUES_ACTION             mean
+
+# -------------------------------------------------------
 
 AVAILABLE_WATER_CONTENT ARC_GRID AWS_grid_MN__1000m.asc
 AVAILABLE_WATER_CONTENT_PROJECTION_DEFINITION +proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23.0 +lon_0=-96 +x_0=0 +y_0=0 +ellps=GRS80 +datum=NAD83 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs
@@ -67,13 +81,12 @@ IRRIGATION_LOOKUP_TABLE IRR_lookup_MN_v3.txt
 
 # Output options
 #---------------
-OUTPUT DISABLE snowmelt snow_storage
-OUTPUT DISABLE snowfall runon rainfall 
+#OUTPUT ENABLE snowmelt snow_storage
+#OUTPUT DISABLE snowfall runon rainfall 
 OUTPUT DISABLE soil_storage delta_soil_storage surface_storage infiltration
 OUTPUT DISABLE irrigation runon 
-OUTPUT ENABLE gross_precip tmax tmin
-OUTPUT_DISABLE runoff_outside reference_ET0 actual_et
-OUTPUT DISABLE rejected_net_infiltration net_infiltration runoff snowmelt
+OUTPUT ENABLE gross_precip runoff_outside reference_ET0 actual_et
+OUTPUT ENABLE rejected_net_infiltration net_infiltration runoff snowmelt tmax tmin
 
 START_DATE 01/01/2000
 END_DATE 01/14/2000
