@@ -19,11 +19,6 @@ def calc_actual_et(rainfall, snowmelt, pet, soil_storage, soil_storage_max):
         aet = pet
     else:
         # see Alley, 1984, eqn 2.
-
-        # in order to come close to the published Thornthwaite-Mather tables, it seems to be
-        # necessary to truncate or round the values, which is apparently what was done in the production
-        # of the original tables
-
         temp_soil_storage = soil_storage * np.exp( p_minus_pet / soil_storage_max )
         aet = soil_storage - temp_soil_storage
 

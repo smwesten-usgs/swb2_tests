@@ -98,8 +98,6 @@ def calc_actual_et__tm_eqns(rainfall, snowmelt, pet, previous_apwl, soil_storage
 
         aet = soil_storage - temp_soil_storage
 
-    breakpoint()
-
     return(p_minus_pet, apwl, aet)
 
 
@@ -139,14 +137,18 @@ def calc_actual_et__tm_tables(rainfall, snowmelt, pet, previous_apwl, soil_stora
         # update apwl; look up resulting soil moisture value
         # apwl terms are positive in the tables
 
+        # Thornthwaite notes that: "Since the values of P-PE are not accumulated as in the case of monthly
+        #                           calculations, it is necessary to accumulate them as the work is carried
+        #                           out by finding the value of the soil moisture storage in the body of the
+        #                           table and then counting ahead by a number equal to the value of P-PE to
+        #                           obtain the new value of soil moisture storage.
+
         apwl_temp = tm_df.iloc[(tm_df['sz_300_calc']-soil_storage).abs().argsort()[:1]]['apwl_mm'].values[0]
 
         apwl = apwl_temp + np.abs(p_minus_pet)
         temp_soil_storage = tm_df.iloc[(tm_df['apwl_mm']-apwl).abs().argsort()[:1]]['sz_300_calc'].values[0]
 
         aet = soil_storage - temp_soil_storage
-
-    breakpoint()
 
     return(p_minus_pet, apwl, aet)
 
