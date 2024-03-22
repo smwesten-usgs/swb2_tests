@@ -204,12 +204,16 @@ def calculate_water_stress_coefficient_ks(total_available_water_taw: float,
 
 
 
+def calculate_actual_et_fao56_two_stage(rainfall: float,
+                                        snowmelt: float,
+                                        pet: float,
+                                        kcb: float, ):
 
 
 
-Kcb_max =  crop_coefficients_FAO56_calculate_Kcb_Max(wind_speed_meters_per_sec=2.,                   &
+  Kcb_max =  crop_coefficients_FAO56_calculate_Kcb_Max(wind_speed_meters_per_sec=2.,                   &
                                                        relative_humidity_min_pct=55.,                  &
-                                                       Kcb=Kcb,                                        & 
+                                                       kcb=kcb,                                        & 
                                                        plant_height_meters=current_plant_height) 
 
   adjusted_depletion_fraction_p = adjust_depletion_fraction_p( landuse_index, reference_et0 )
