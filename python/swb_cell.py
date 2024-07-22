@@ -6,6 +6,7 @@ from pet_hargreaves_samani import calculate_et0_hargreaves_samani
 from actual_et_thornthwaite_mather import calc_actual_et
 from actual_et_thornthwaite_mather__tables import (calc_actual_et__tm_tables,
                                                   calc_actual_et__tm_eqns)
+from growing_degree_day import update_growing_degree_day
 from partition_daily_precipitation import partition_daily_precip
 from potential_snowmelt import calculate_potential_snowmelt
 
@@ -19,6 +20,7 @@ class SWBCell:
         self.rainfall = 0.
         self.snowmelt = 0.
         self.snowfall = 0.
+        self.gdd = 0.
         self.snow_storage = 0.
         self.pet = 0.
         self.apwl = 0.
@@ -29,6 +31,7 @@ class SWBCell:
         self.output_dict = {}
 
     def init_soil_storage_max(self):
+        # rooting depth in meters, awc in mm/m
         self.soil_storage_max = self.rooting_depth * self.available_water_capacity
 
 
@@ -96,6 +99,12 @@ class SWBCell:
         self.previous_soil_storage = self.soil_storage
         self.previous_apwl = self.apwl
 
+        if month == 1 and day == 1:
+            self.gdd = 0.
+        else:
+            self.gdd += update_growing_degree_day(tmin=self.tmin_c,
+                                                  tmax=self.tmax_c)
+
         if self.calc_method=='tm_table':
             (self.p_minus_pet, self.apwl, self.aet) = calc_actual_et__tm_tables(self.rainfall,
                                                                                 self.snowmelt,
@@ -134,13 +143,14 @@ class SWBCell:
     def variables_todict(self):
         self.output_dict[self.dtindex] = [self.date, self.previous_soil_storage, self.soil_storage,
                                           self.rainfall, self.snow_storage, self.snowfall, self.snowmelt,
-                                          self.pet, self.p_minus_pet, self.aet, self.net_infiltration, self.apwl]
+                                          self.pet, self.p_minus_pet, self.aet, self.net_infiltration, self.apwl,
+                                          self.gdd]
         
     def convert_dict_to_df(self):
         self.output_df = pd.DataFrame.from_dict(self.output_dict, orient='index')
         self.output_df.columns=['date','previous_soil_storage','soil_storage','rainfall',
                                 'snow_storage', 'snowfall', 'snowmelt','pet','p_minus_pet',
-                                'aet','net_infiltration','apwl']
+                                'aet','net_infiltration','apwl','gdd']
 
 
 def references():
