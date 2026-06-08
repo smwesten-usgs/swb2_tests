@@ -25,8 +25,8 @@ AVAILABLE_WATER_CONTENT_METHOD   GRIDDED
 ----------------------------------------------------------------
 
 INITIAL_CONTINUOUS_FROZEN_GROUND_INDEX CONSTANT 100.0
-UPPER_LIMIT_CFGI 83.
-LOWER_LIMIT_CFGI 55.
+UPPER_LIMIT_CFGI CONSTANT 83.
+LOWER_LIMIT_CFGI CONSTANT 55.
 
 %% specify location and projection for input GIS grids
 ------------------------------------------------------
