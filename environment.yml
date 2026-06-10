@@ -1,0 +1,15 @@
+name: swb2_tests
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.11
+  - numpy
+  - pandas
+  - matplotlib
+  - xarray
+  - scipy
+  - netcdf4
+  - h5netcdf
+  - pyproj
+  - jupyterlab
+  - pyfao56

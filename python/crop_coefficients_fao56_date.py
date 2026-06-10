@@ -1,101 +1,114 @@
-import numpy as np
+"""
+Date-based FAO-56 crop coefficient curve construction.
+Matches SWB2 Fortran implementation in crop_coefficients__fao56.F90,
+function update_crop_coefficient_date_as_threshold().
+"""
 import datetime as dt
+import numpy as np
 
-def update_crop_coefficient_date_as_threshold(planting_date: dt.datetime,
-                                              l_ini: int,
-                                              l_dev: int,
-                                              l_mid: int,
-                                              l_late: int,
-                                              l_fallow: int,
-                                              kcb_min: float,
-                                              kcb_mid: float,
-                                              kcb_end: float,
-                                              current_date: int):
-    """Update crop coefficient given the current day of year.
+
+def compute_growth_stage_dates(planting_date, l_ini, l_dev, l_mid, l_late, l_fallow):
+    """Compute the endpoint dates for each growth stage.
 
     Args:
-        planting_date (datetime): _description_
-        l_ini (int): _description_
-        l_dev (int): _description_
-        l_mid (int): _description_
-        l_late (int): 
-        kcb_min (float): _description_
-        kcb_mid (float): _description_
-        kcb_kcb_end (float): _description_
-        current_doy (int): _description_
-
-                                    kcb_mid
-                            /----------------------\
-                           /                        \
-                          /                          \
-                         /                            \
-                        /                              \
-                       /                                \
-                      /                                  \
-        kcb_ini      /                                    \      kcb_end
-    ----------------/                                      \----------------
-  doy_plant
-    |               |       |                      |       |                |
-        l_ini         l_dev           l_mid          l_late     l_fallow
-
-    """
-    planting_month = planting_date.timetuple().tm_month
-    planting_day = planting_date.timetuple().tm_day
-    current_year = current_date.timetuple().tm_year
-    current_doy = current_date.timetuple().tm_yday
-
-    planting_doy = dt.date(current_year, planting_month, planting_day).timetuple().tm_yday
-
-    doy_end_ini = current_doy + l_ini
-    doy_end_dev = doy_end_ini + l_dev
-    doy_end_mid = doy_end_dev + l_mid
-    doy_end_late = doy_end_mid + l_late
-    doy_end_fallow = doy_end_late + l_fallow
-
-    if current_doy > doy_end_fallow:
-        # TODO: possibly interpolate between kcb_end and kcb_min during l_fallow period
-        kcb = kcb_min
-    elif current_doy > doy_end_late:
-        kcb = kcb_end
-    elif current_doy > doy_end_mid:
-        frac = ( current_doy - doy_end_mid ) / ( doy_end_late - doy_end_mid )
-        kcb = kcb_mid * (1.0 - frac) + kcb_end * frac
-    elif current_doy > doy_end_dev:
-       kcb = kcb_mid
-    elif current_doy > doy_end_ini:
-        frac = ( current_doy - doy_plant ) / ( doy_end_dev - doy_plant )
-        kcb = kcb_ini * (1.0 - frac) + kcb_mid * frac
-    else:
-       kcb = kcb_min
-
-    return kcb
-
-
-def calculate_kcb_max(wind_speed_meters_per_sec: float,
-                      relative_humidity_min_pct: float,
-                      kcb: float,
-                      plant_height_meters: float):
-    """Adjust the maximum crop coefficient (Kcb) to account for wind speed and relative humidity.
-
-    Args:
-        wind_speed_meters_per_sec (float): wind speed (meters per sec)
-        relative_humidity_min_pct (float): relative humidity (percent, 0-100)
-        kcb (float): crop coefficient (unitless)
-        plant_height_meters (float): plant height (meters)
+        planting_date: datetime.date for planting
+        l_ini, l_dev, l_mid, l_late, l_fallow: length in days of each stage
 
     Returns:
-        float: adjusted crop coefficient (unitless)
+        dict with keys: planting, end_ini, end_dev, end_mid, end_late, end_fallow
     """
-  
-    # limits are suggested on page 123 of FAO-56 with respect to modifying the mid-season kcb
-    rhmin = np.clip( relative_humidity_min_pct, a_min=[20.], a_max=[80.])
-    u2 = np.clip(wind_speed_meters_per_sec, a_min=[1.], a_max=[6.])
-    plant_height = np.clip(plant_height_meters, a_min=[1.], a_max=[10.])
+    end_ini = planting_date + dt.timedelta(days=l_ini)
+    end_dev = end_ini + dt.timedelta(days=l_dev)
+    end_mid = end_dev + dt.timedelta(days=l_mid)
+    end_late = end_mid + dt.timedelta(days=l_late)
+    end_fallow = end_late + dt.timedelta(days=l_fallow)
 
-    # equation 72, FAO-56, p 199
-    kcb_max = np.max(1.2 + ( (0.04 * (u2 - 2.)
-                            - 0.004 * (rhmin - 45.) ) ) 
-                                    * (plant_height_meters/3.)**0.3, 
-                     kcb + 0.05 )
+    return dict(planting=planting_date, end_ini=end_ini, end_dev=end_dev,
+                end_mid=end_mid, end_late=end_late, end_fallow=end_fallow)
 
-    return kcb_max
+
+def update_crop_coefficient_date(current_date, stages, kcb_ini, kcb_mid, kcb_end, kcb_min):
+    """Compute Kcb for a given date based on growth stage dates.
+
+    Matches the Fortran logic exactly:
+      - After date_late: kcb_min
+      - date_mid to date_late: linear interp from kcb_mid to kcb_end
+      - date_dev to date_mid: kcb_mid (plateau)
+      - date_ini to date_dev: linear interp from kcb_ini to kcb_mid
+      - planting to date_ini: kcb_ini
+      - Before planting: kcb_min
+
+    Args:
+        current_date: datetime.date
+        stages: dict from compute_growth_stage_dates()
+        kcb_ini, kcb_mid, kcb_end, kcb_min: crop coefficient values
+
+    Returns:
+        float: Kcb value for the current date
+    """
+    if current_date >= stages['end_late']:
+        return kcb_min
+    elif current_date >= stages['end_mid']:
+        days_since = (current_date - stages['end_mid']).days
+        days_total = (stages['end_late'] - stages['end_mid']).days
+        frac = days_since / days_total if days_total > 0 else 0.0
+        return kcb_mid * (1.0 - frac) + kcb_end * frac
+    elif current_date >= stages['end_dev']:
+        return kcb_mid
+    elif current_date >= stages['end_ini']:
+        days_since = (current_date - stages['end_ini']).days
+        days_total = (stages['end_dev'] - stages['end_ini']).days
+        frac = days_since / days_total if days_total > 0 else 0.0
+        return kcb_ini * (1.0 - frac) + kcb_mid * frac
+    elif current_date >= stages['planting']:
+        return kcb_ini
+    else:
+        return kcb_min
+
+
+def compute_kcb_timeseries(start_date, end_date, planting_doy,
+                           l_ini, l_dev, l_mid, l_late, l_fallow,
+                           kcb_ini, kcb_mid, kcb_end, kcb_min):
+    """Compute a full Kcb timeseries, handling multi-year date resets.
+
+    At the end of the fallow period, the planting date advances to the
+    next occurrence (same DOY, next year if already past).
+
+    Args:
+        start_date, end_date: datetime.date
+        planting_doy: day of year for planting
+        l_ini, l_dev, l_mid, l_late, l_fallow: stage lengths in days
+        kcb_ini, kcb_mid, kcb_end, kcb_min: Kcb values
+
+    Returns:
+        dates: list of datetime.date
+        kcb_values: list of float
+    """
+    # Initialize planting date for the start year
+    planting_date = dt.date(start_date.year, 1, 1) + dt.timedelta(days=planting_doy - 1)
+    if planting_date < start_date:
+        # If we're already past planting in the start year, still use it
+        # (SWB2 initializes with the start year's planting date)
+        pass
+
+    stages = compute_growth_stage_dates(planting_date, l_ini, l_dev, l_mid, l_late, l_fallow)
+
+    dates = []
+    kcb_values = []
+    current = start_date
+
+    while current <= end_date:
+        # Check if we need to advance to next year's planting cycle
+        if current > stages['end_fallow']:
+            # Advance planting date to next occurrence
+            next_planting = dt.date(current.year, 1, 1) + dt.timedelta(days=planting_doy - 1)
+            if current.timetuple().tm_yday > planting_doy:
+                next_planting = dt.date(current.year + 1, 1, 1) + dt.timedelta(days=planting_doy - 1)
+            stages = compute_growth_stage_dates(next_planting, l_ini, l_dev, l_mid, l_late, l_fallow)
+
+        kcb = update_crop_coefficient_date(current, stages, kcb_ini, kcb_mid, kcb_end, kcb_min)
+        dates.append(current)
+        kcb_values.append(kcb)
+        current += dt.timedelta(days=1)
+
+    return dates, kcb_values
