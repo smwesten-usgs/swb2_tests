@@ -11,5 +11,6 @@ dependencies:
   - netcdf4
   - h5netcdf
   - pyproj
+  - proj-data
   - jupyterlab
   - pyfao56

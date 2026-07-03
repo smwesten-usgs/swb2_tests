@@ -29,6 +29,8 @@ jupyter lab
 
 Each notebook is self-contained. It runs SWB2 (from `bin/swb2.exe`), executes a Python reimplementation of the same calculations, and compares the results. Notebooks create output in `test__<name>/output/` and `test__<name>/logfiles/` directories which are regenerated on each run.
 
+THE CURRENT VERSION OF SWB2 INCLUDED IN 'bin' IS v2.4.0-rc0.
+
 Notebooks should be run in order (01 through 05) since earlier notebooks verify foundational functionality.
 
 
