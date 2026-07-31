@@ -13,4 +13,5 @@ dependencies:
   - pyproj
   - proj-data
   - jupyterlab
+  - ipykernel>=6.29
   - pyfao56
